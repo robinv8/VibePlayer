@@ -9,6 +9,7 @@ import android.media.audiofx.Visualizer
 import android.os.Bundle
 import android.provider.MediaStore
 import android.widget.ImageButton
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -19,6 +20,7 @@ import com.robin.vibeplayer.model.MusicFile
 import com.robin.vibeplayer.visualization.AudioVisualizerView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import androidx.core.widget.NestedScrollView
+import com.robin.vibeplayer.visualization.VisualizerEffect
 
 class MainActivity : AppCompatActivity() {
 
@@ -29,9 +31,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var previousButton: ImageButton
     private lateinit var nextButton: ImageButton
     private lateinit var playlistButton: ImageButton
+    private lateinit var effectButton: ImageButton
     private lateinit var musicAdapter: MusicAdapter
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<NestedScrollView>
-    
+
     private var musicFiles = mutableListOf<MusicFile>()
     private var currentMusicIndex = -1
 
@@ -52,6 +55,15 @@ class MainActivity : AppCompatActivity() {
         previousButton = findViewById(R.id.previousButton)
         nextButton = findViewById(R.id.nextButton)
         playlistButton = findViewById(R.id.playlistButton)
+        effectButton = findViewById(R.id.effectButton)
+        
+        // 设置效果切换按钮
+        effectButton.setOnClickListener {
+            visualizerView.currentEffect = when (visualizerView.currentEffect) {
+                VisualizerEffect.NET -> VisualizerEffect.CIRCLE
+                VisualizerEffect.CIRCLE -> VisualizerEffect.NET
+            }
+        }
         
         setupPlayButton()
         setupNavigationButtons()
@@ -191,6 +203,7 @@ class MainActivity : AppCompatActivity() {
                     android.util.Log.d("VibePlayer", "MediaPlayer prepared successfully")
                     start()
                     playButton.setImageResource(android.R.drawable.ic_media_pause)
+                    setupVisualizer() // 在播放器准备好后设置Visualizer
                 }
                 
                 setOnErrorListener { mp, what, extra ->
@@ -240,25 +253,39 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupVisualizer() {
+        // 释放旧的Visualizer
+        visualizer?.release()
+        
         mediaPlayer?.let { player ->
+            // 创建新的Visualizer
             visualizer = Visualizer(player.audioSessionId).apply {
+                // 设置最大的采样大小
                 captureSize = Visualizer.getCaptureSizeRange()[1]
                 
+                // 设置数据捕获监听器
                 setDataCaptureListener(object : Visualizer.OnDataCaptureListener {
                     override fun onWaveFormDataCapture(visualizer: Visualizer, waveform: ByteArray, samplingRate: Int) {
                         val amplitudes = FloatArray(waveform.size) {
-                            waveform[it].toFloat() / 128.0f
+                            // 增强波形数据
+                            val raw = waveform[it].toFloat() / 128.0f
+                            raw * 1.5f // 降低放大倍数
                         }
-                        visualizerView.updateAmplitudes(amplitudes)
+
+                        visualizerView.updateWaveform(amplitudes)
                     }
 
                     override fun onFftDataCapture(visualizer: Visualizer, fft: ByteArray, samplingRate: Int) {
-                        // 可以用来实现频谱分析
+                        // 我们使用波形数据而不是FFT数据
                     }
-                }, Visualizer.getMaxCaptureRate() / 2, true, false)
+                }, Visualizer.getMaxCaptureRate(), true, false) // 使用最大采样率
                 
+                // 启用Visualizer
                 enabled = true
             }
+            
+            android.util.Log.d("VibePlayer", "Visualizer setup completed. AudioSessionId: ${player.audioSessionId}")
+        } ?: run {
+            android.util.Log.e("VibePlayer", "MediaPlayer is null when setting up visualizer")
         }
     }
 

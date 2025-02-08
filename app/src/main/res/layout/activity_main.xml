@@ -60,6 +60,15 @@
                 android:tint="@android:color/white"
                 android:layout_marginStart="16dp" />
 
+            <ImageButton
+                android:id="@+id/effectButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@android:drawable/ic_menu_view"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:tint="@android:color/white"
+                android:layout_marginStart="16dp" />
+
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
