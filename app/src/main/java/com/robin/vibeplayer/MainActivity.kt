@@ -61,7 +61,8 @@ class MainActivity : AppCompatActivity() {
         effectButton.setOnClickListener {
             visualizerView.currentEffect = when (visualizerView.currentEffect) {
                 VisualizerEffect.NET -> VisualizerEffect.CIRCLE
-                VisualizerEffect.CIRCLE -> VisualizerEffect.NET
+                VisualizerEffect.CIRCLE -> VisualizerEffect.WAVE
+                VisualizerEffect.WAVE -> VisualizerEffect.NET
             }
         }
         
